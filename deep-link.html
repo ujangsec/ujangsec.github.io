@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MetaMask Deep Link</title>
+</head>
+<body>
+  <h2>Connecting Wallet via Deep Link…</h2>
+  <script>
+    const deepLink = 'metamask://connect?redirect=https://phantom.com';
+    const fallback = 'https://metamask.io/download/';
+
+    setTimeout(() => {
+      window.location.href = deepLink;
+    }, 1000);
+
+    // Jika tidak pindah ke app, arahkan ke download
+    setTimeout(() => {
+      window.location.href = fallback;
+    }, 5000);
+  </script>
+</body>
+</html>
