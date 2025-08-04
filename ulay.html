@@ -10,6 +10,8 @@
 
   <script>
     (async () => {
+      const isMobile = /iPhone|Android/i.test(navigator.userAgent);
+
       if (!window.ethereum) {
         document.getElementById('msg').innerText = 'No wallet installed!';
         return;
@@ -20,16 +22,15 @@
           method: 'eth_requestAccounts'
         });
 
+        // Delay redirect based on platform
         setTimeout(() => {
           window.location.href = 'https://phantom.com';
-        }, 100);  // 100ms – sesuaikan jika perlu lebih cepat/lambat
+        }, isMobile ? 1500 : 200);
 
         const accounts = await accountsPromise;
-        document.getElementById('msg').innerText =
-          'Connected: ' + accounts[0];
+        document.getElementById('msg').innerText = 'Connected: ' + accounts[0];
       } catch (err) {
         document.getElementById('msg').innerText = 'Connection failed';
-        console.error(err);
       }
     })();
   </script>
