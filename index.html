@@ -2,20 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Attacker Launcher</title>
+  <title>Wallet Spoofing Launcher</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin-top: 50px;
+    }
+    button {
+      padding: 12px 24px;
+      margin: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-  <h1>🚀 Launch Spoof Relay</h1>
-  <button id="launch">Launch Connect</button>
+  <h1>🚀 Wallet Spoofing Launcher</h1>
+
+  <button onclick="openWindow('ulay.html')">Launch Spoof Relay</button><br>
+  <button onclick="openWindow('phantom-ui.html')">Open Fake Phantom UI</button><br>
+  <button onclick="openWindow('deep-link.html')">Launch Mobile Deep Link</button>
 
   <script>
-    document.getElementById('launch').addEventListener('click', () => {
-      window.open(
-        'https://ujangsec.github.io/ulay.html', 
-        '_blank', 
-        'popup=true,width=400,height=600'
-      );
-    });
+    function openWindow(path) {
+      window.open(path, '_blank', 'width=400,height=600');
+    }
   </script>
 </body>
 </html>
