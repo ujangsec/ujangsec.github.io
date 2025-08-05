@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Reader Mode</title>
+  <style>
+    :root {
+      --bg-color: #ffffff;
+      --text-color: #000000;
+    }
+
+    body.dark-mode {
+      --bg-color: #1e1e1e;
+      --text-color: #e0e0e0;
+    }
+
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      transition: background 0.3s, color 0.3s;
+    }
+
+    header, nav, footer {
+      background: #333;
+      color: white;
+      padding: 10px;
+    }
+
+    nav ul {
+      display: flex;
+      list-style: none;
+      gap: 10px;
+    }
+
+    .content {
+      padding: 20px;
+    }
+
+    #reader-mode {
+      display: none;
+      background: var(--bg-color);
+      color: var(--text-color);
+      padding: 20px;
+      font-size: 1.1em;
+      line-height: 1.6;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .controls {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    button {
+      padding: 10px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <header><h1>News Portal</h1></header>
+
+  <nav>
+    <ul>
+      <li>Home</li>
+      <li>News</li>
+      <li>About</li>
+    </ul>
+  </nav>
+
+  <div class="content" id="main-content">
+    <h2>Berita Hari Ini</h2>
+    <p>Berita hari ini sangat penting untuk disimak oleh masyarakat luas karena berisi update terbaru.</p>
+  </div>
+
+  <div id="reader-mode">
+    <h2>Reader Mode</h2>
+    <div id="reader-content"></div>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 News Portal</p>
+  </footer>
+
+  <div class="controls">
+    <button onclick="toggleReaderMode()">Toggle Reader Mode</button>
+    <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
+    <button onclick="readAloud()">🔊 Read Aloud</button>
+    <button onclick="stopReading()">🛑 Stop Reading</button>
+  </div>
+
+  <script>
+    const keywords = [
+      "berita hari ini",
+      "news today",
+      "daily news",
+      "football news"
+    ];
+
+    const header = document.querySelector("header");
+    const nav = document.querySelector("nav");
+    const footer = document.querySelector("footer");
+    const mainContent = document.getElementById("main-content");
+    const readerContent = document.getElementById("reader-content");
+    const readerMode = document.getElementById("reader-mode");
+
+    let readerActive = false;
+
+    function activateReaderMode(triggeredByKeyword = false) {
+      header.classList.add("hidden");
+      nav.classList.add("hidden");
+      footer.classList.add("hidden");
+
+      readerContent.innerText = mainContent.innerText;
+      mainContent.classList.add("hidden");
+      readerMode.style.display = "block";
+      readerActive = true;
+
+      if (triggeredByKeyword) {
+        console.log("Reader mode activated by keyword.");
+      }
+    }
+
+    function deactivateReaderMode() {
+      header.classList.remove("hidden");
+      nav.classList.remove("hidden");
+      footer.classList.remove("hidden");
+
+      readerMode.style.display = "none";
+      mainContent.classList.remove("hidden");
+      readerActive = false;
+    }
+
+    function toggleReaderMode() {
+      if (readerActive) {
+        deactivateReaderMode();
+      } else {
+        activateReaderMode();
+      }
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
+    }
+
+    function readAloud() {
+      const text = readerActive
+        ? readerContent.innerText
+        : mainContent.innerText;
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "id-ID"; // Use "en-US" if English
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function stopReading() {
+      window.speechSynthesis.cancel();
+    }
+
+    function checkForKeywords(text) {
+      const lowerText = text.toLowerCase();
+      for (let keyword of keywords) {
+        if (lowerText.includes(keyword.toLowerCase())) {
+          activateReaderMode(true);
+          break;
+        }
+      }
+    }
+
+    // Initial keyword check on load
+    window.addEventListener("load", () => {
+      checkForKeywords(document.body.innerText);
+    });
+
+    // MutationObserver for SPA / dynamic content changes
+    const observer = new MutationObserver(() => {
+      if (!readerActive) {
+        checkForKeywords(document.body.innerText);
+      }
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+  </script>
+</body>
+</html>
