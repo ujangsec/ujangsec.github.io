@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimized for Reader Mode</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Lora:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* * CSS BEST PRACTICES FOR READER MODE
+         * ------------------------------------
+         * 1. SEPARATION OF CONCERNS: This CSS is purely for presentation. All content is in the HTML.
+         * 2. READABILITY: The styles here focus on creating a pleasant reading experience in the *normal* view.
+         * Reader Mode will discard these styles and apply its own.
+         * 3. FONT-FAMILY: We use standard web fonts. Icon fonts are avoided as they break in Reader Mode.
+         * 4. DEFAULT-HIDDEN PATTERN: This is a key strategy. Non-essential content is hidden in the HTML
+         * with the `hidden` attribute. We then override that attribute here to make it visible for normal users.
+         * Reader Mode will ignore this CSS and respect the `hidden` attribute, correctly excluding the content.
+        */
+        body {
+            font-family: 'Lora', serif;
+            line-height: 1.7;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* This is the override for the "default-hidden" pattern. */
+        .author-bio[hidden],
+        .related-articles[hidden] {
+            display: block; /* Or flex, grid, etc., as needed */
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- 
+      BOILERPLATE CONTENT
+      This content (header, nav, footer) is intentionally placed outside the <main> element.
+      This signals to the distiller that it is repetitive boilerplate and should be ignored.
+    -->
+    <header class="bg-white border-b border-gray-200">
+        <div class="max-w-4xl mx-auto py-4 px-4">
+            <h4 class="text-2xl font-bold">The Modern Web</h4>
+            <p class="text-gray-500">A Blog About Digital Best Practices</p>
+        </div>
+    </header>
+
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 py-2 flex space-x-6">
+            <a href="#" class="text-gray-600 hover:text-blue-600">Home</a>
+            <a href="#" class="text-gray-600 hover:text-blue-600">Topics</a>
+            <a href="#" class="text-gray-600 hover:text-blue-600">About</a>
+            <a href="#" class="text-gray-600 hover:text-blue-600">Contact</a>
+        </div>
+    </nav>
+
+    <!-- 
+      MAIN CONTENT WRAPPER: <main>
+      This tag is a crucial semantic signal. It tells the distiller, "The primary, unique content for this page starts here."
+      This helps the algorithm focus its analysis and ignore the header/nav/footer.
+    -->
+    <main class="max-w-4xl mx-auto py-8 px-4">
+
+        <!-- 
+          ARTICLE CONTAINER: <article>
+          This is arguably the MOST IMPORTANT tag for Reader Mode compatibility.
+          It clearly defines the boundary of the self-contained article.
+          Its presence is a primary heuristic for determining if a page is an "article" and eligible for Reader Mode.
+        -->
+        <article class="prose prose-lg max-w-none">
+            
+            <!-- 
+              PRIMARY HEADING: <h1>
+              There is one, and only one, H1 on this page. It serves as the definitive title of the article.
+              The distiller uses this as the title in the Reader Mode view.
+            -->
+            <h1>Engineering for Clarity: A Guide to Reader Mode</h1>
+
+            <!-- 
+              CONTENT SECTIONS: <section>
+              Sections group thematically related content. Each section starts with a heading (H2, H3, etc.).
+              This creates a logical document outline that is easy for both humans and machines to parse.
+              The heading hierarchy (H1 -> H2 -> H3) is maintained without skipping levels.
+            -->
+            <section>
+                <h2>The Semantic Blueprint</h2>
+                <p>The foundation of a website that performs reliably in Chrome's Reader Mode is the disciplined application of semantic HTML. This principle dictates that HTML tags should be chosen based on the meaning of the content they contain, not for their visual presentation. This is the single most important practice for ensuring your content is correctly interpreted.</p>
+                
+                <!-- 
+                  MEDIA: <figure> and <figcaption>
+                  Wrapping images and their captions this way creates a single, self-contained unit.
+                  The distiller understands that the image and its caption belong together and are part of the main content.
+                -->
+                <figure class="my-8">
+                    <img src="https://placehold.co/800x400/e2e8f0/4a5568?text=Semantic+HTML+Structure" alt="A diagram showing a well-structured HTML document." class="rounded-lg shadow-md w-full">
+                    <figcaption class="text-center text-sm text-gray-600 mt-2">A clean, semantic structure is the key to compatibility.</figcaption>
+                </figure>
+
+                <p>When a webpage is built with elements like <code>&lt;article&gt;</code>, <code>&lt;section&gt;</code>, and a proper heading hierarchy, it provides a clear, machine-readable outline. Content extraction algorithms leverage this structural information to distinguish primary content from ancillary boilerplate like ads and navigation.</p>
+            </section>
+
+            <section>
+                <h2>Content Primitives</h2>
+                <p>While high-level containers define the overall structure, the correct markup of fundamental text elements provides the granular data for the distiller's scoring heuristics.</p>
+                
+                <!-- 
+                  LISTS: <ul>, <ol>, <li>
+                  Using proper list tags provides structural information that is preserved in the final Reader Mode view.
+                  This is far better than simulating a list with plain text and hyphens.
+                -->
+                <h3>Key Elements:</h3>
+                <ul>
+                    <li><strong>Paragraphs (<code>&lt;p&gt;</code>):</strong> All body text must be enclosed in paragraph tags. Do not use multiple <code>&lt;br&gt;</code> tags to create space.</li>
+                    <li><strong>Blockquotes (<code>&lt;blockquote&gt;</code>):</strong> For extended quotations, this tag provides a strong semantic signal.</li>
+                    <li><strong>Lists (<code>&lt;ul&gt;</code>, <code>&lt;ol&gt;</code>):</strong> Use these for any itemized information to preserve structure.</li>
+                </ul>
+
+                <!-- 
+                  BLOCKQUOTES: <blockquote>
+                  This semantically identifies the enclosed text as a quotation, ensuring it's included and often styled distinctly in Reader Mode.
+                -->
+                <blockquote class="border-l-4 border-gray-300 pl-4 italic text-gray-600">
+                    "By focusing on clarity and scannability for the human reader, developers simultaneously create a data structure that is more legible to the machine."
+                </blockquote>
+            </section>
+            
+            <section id="dynamic-content-target">
+                <h2>The JavaScript Conundrum</h2>
+                <p>DOM Distiller and similar tools do not operate on the initial HTML source. Instead, their analysis is performed on the <strong>rendered DOM</strong>—the live representation of the page *after* JavaScript has executed. This means content added dynamically is visible to the distiller, but it also introduces potential timing issues.</p>
+                <!-- This paragraph will be added by JavaScript below -->
+            </section>
+
+        </article>
+
+        <!-- 
+          NON-ESSENTIAL CONTENT (DEFAULT-HIDDEN)
+          This content is supplementary. It's useful for a normal user but should be excluded from the clean, focused Reader Mode view.
+          By applying the `hidden` attribute directly in the HTML, we ensure it's ignored by the distiller.
+          Our CSS file then overrides this `hidden` attribute to make it visible in the normal browser view.
+        -->
+        <div class="author-bio mt-12 p-6 bg-blue-50 border border-blue-200 rounded-lg" hidden>
+            <h3 class="text-xl font-bold font-sans">About the Author</h3>
+            <p class="mt-2">Jane Doe is a web developer and accessibility advocate with over a decade of experience building user-centric digital products.</p>
+        </div>
+
+        <div class="related-articles mt-8" hidden>
+            <h3 class="text-xl font-bold font-sans">Related Articles</h3>
+            <ul class="list-disc list-inside mt-2">
+                <!-- High link density here helps the distiller identify this as boilerplate to be excluded. -->
+                <li><a href="#" class="text-blue-600 hover:underline">Why Server-Side Rendering Matters</a></li>
+                <li><a href="#" class="text-blue-600 hover:underline">A Deep Dive into WCAG 2.2</a></li>
+                <li><a href="#" class="text-blue-600 hover:underline">CSS Strategies for Maintainable Design Systems</a></li>
+            </ul>
+        </div>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-12">
+        <div class="max-w-4xl mx-auto py-8 px-4 text-center text-gray-400">
+            <p>&copy; 2025 The Modern Web. All rights reserved.</p>
+            <!-- High link density here is another negative signal for the distiller. -->
+            <div class="mt-4 space-x-4">
+                <a href="#" class="hover:underline">Privacy Policy</a>
+                <a href="#" class="hover:underline">Terms of Service</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+    // JAVASCRIPT BEST PRACTICES FOR READER MODE
+    // ------------------------------------------
+    // 1. RENDERED DOM: This script demonstrates that the distiller works on the *final* DOM.
+    //    We are dynamically adding a paragraph to the article. As long as this script runs
+    //    quickly on page load, the new paragraph will be included in the Reader Mode view.
+    // 2. TARGETING: The script injects the content into a clean, semantic container within the <article>.
+    //    This is much better than creating complex, non-semantic DOM structures with JS.
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Find the target section within the article
+        const target = document.getElementById('dynamic-content-target');
+
+        if (target) {
+            // Create a new paragraph element, just like the others
+            const dynamicParagraph = document.createElement('p');
+            dynamicParagraph.textContent = 'For example, this very paragraph was added to the page using JavaScript after the initial HTML was loaded. Because it is rendered into the DOM before distillation, it becomes part of the final article.';
+            
+            // Append it to the target section
+            target.appendChild(dynamicParagraph);
+        }
+    });
+
+    // BONUS: BOOKMARKLET FOR TESTING
+    // -------------------------------
+    // It can be hard to get the Reader Mode icon to appear during development.
+    // You can create a browser bookmarklet with the code below to *force* any page into Reader Mode.
+    // How to use:
+    // 1. Create a new bookmark in your browser.
+    // 2. Name it something like "Force Reader Mode".
+    // 3. Instead of a URL, copy and paste the entire line of code below into the URL/Address field.
+    // 4. Go to the page you want to test and click the bookmark.
+
+    /*
+    javascript:(function(){
+        const R_M_B_URL='chrome-distiller://';
+        const R_M_B_UUID='00000000-0000-0000-0000-000000000000';
+        async function getSha256(str){
+            const textAsBuffer=new TextEncoder().encode(str);
+            const hashBuffer=await crypto.subtle.digest('SHA-256',textAsBuffer);
+            const hashArray=Array.from(new Uint8Array(hashBuffer));
+            const hash=hashArray.map(b=>b.toString(16).padStart(2,'0')).join('');
+            return hash;
+        }
+        getSha256(window.location.href).then(hash=>{
+            window.location.href=`${R_M_B_URL}${R_M_B_UUID}_${hash}/?url=${encodeURIComponent(window.location.href)}`;
+        });
+    })();
+    */
+    </script>
+</body>
+</html>
