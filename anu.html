@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tugas WebView Payload</title>
+    <style>
+        /* CSS ini hanya untuk membuat tampilan lebih rapi, tidak wajib */
+        body {
+            font-family: sans-serif;
+            background-color: #2c004f; /* Warna latar belakang ungu gelap seperti di gambar */
+            color: white;
+            padding: 20px;
+        }
+        #log {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 10px;
+            min-height: 100px;
+            background-color: #1e0034;
+            white-space: pre-wrap; /* Agar teks log tidak memanjang ke samping */
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Hasil Eksekusi JavaScript</h1>
+    <p>Log output akan ditampilkan di kotak di bawah ini:</p>
+    
+    <div id="log"></div>
+
+    <script>
+        // Fungsi untuk menambahkan pesan ke dalam elemen 'log' di atas
+        const log = msg => document.getElementById("log").textContent += "\n" + msg;
+
+        try {
+            // Mengecek apakah antarmuka untuk berkomunikasi dengan React Native WebView ada
+            if (window.webkit?.messageHandlers?.ReactNativeWebView) {
+                log("ReactNativeWebView handler detected.");
+
+                // Ini adalah payload JSON yang sengaja dibuat tidak valid (malformed)
+                const payload = '"{unclosed_json":';
+
+                // Mengirim payload ke aplikasi React Native
+                window.webkit.messageHandlers.ReactNativeWebView.postMessage(payload);
+                log("Payload sent: " + payload);
+            } else {
+                // Pesan ini akan muncul jika halaman ini tidak dibuka di dalam React Native WebView
+                log("ReactNativeWebView handler not available.");
+            }
+        } catch (e) {
+            // Menangkap jika ada error saat eksekusi JavaScript
+            log("JS Exception: " + e.message);
+        }
+    </script>
+
+</body>
+</html>
