@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>DEMO Renderer</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body{margin:0;font-family:system-ui,Arial,Helvetica}
+    .bar{background:#111;color:#eee;padding:10px 14px;font-size:14px}
+    .wrap{max-width:800px;margin:0 auto}
+  </style>
+</head>
+<body>
+  <div class="bar">
+    Actual origin: <b id="host"></b> • Vector: <span id="vec"></span>
+  </div>
+  <div id="app" class="wrap"></div>
+
+  <script>
+    // Tampilkan host aktual (bukan yang ada di header IAB)
+    document.getElementById('host').textContent = location.host;
+
+    // Ambil payload dari hash
+    const hash = new URLSearchParams(location.hash.slice(1));
+    document.getElementById('vec').textContent = hash.get('vector') || 'n/a';
+
+    const b64 = hash.get('payload') || '';
+    try{
+      const html = decodeURIComponent(escape(atob(b64)));
+      // Masukkan ke halaman (DEMO; jangan gunakan untuk menerima input user sungguhan)
+      document.getElementById('app').innerHTML = html;
+    }catch(e){
+      document.getElementById('app').textContent = 'Failed to decode payload: ' + e;
+    }
+  </script>
+</body>
+</html>
